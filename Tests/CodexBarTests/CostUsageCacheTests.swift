@@ -11,7 +11,7 @@ struct CostUsageCacheTests {
         let claudeURL = CostUsageCacheIO.cacheFileURL(provider: .claude, cacheRoot: root)
         let vertexURL = CostUsageCacheIO.cacheFileURL(provider: .vertexai, cacheRoot: root)
 
-        #expect(codexURL.lastPathComponent == "codex-v8.json")
+        #expect(codexURL.lastPathComponent == "codex-v9.json")
         #expect(claudeURL.lastPathComponent == "claude-v4.json")
         #expect(vertexURL.lastPathComponent == "vertexai-v4.json")
     }
@@ -93,6 +93,26 @@ struct CostUsageCacheTests {
             cache: cache,
             cacheRoot: root,
             producerKey: "codex:cu:p3c27f997569eb3c5")
+
+        let loaded = CostUsageCacheIO.load(provider: .codex, cacheRoot: root)
+
+        #expect(loaded.lastScanUnixMs == 123)
+        #expect(loaded.days["2026-05-18"]?["gpt-5.5"] == [1, 2, 3])
+    }
+
+    @Test
+    func `current codex cache accepts project metadata migration producer`() throws {
+        let root = try self.makeTemporaryCacheRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        var cache = CostUsageCache()
+        cache.lastScanUnixMs = 123
+        cache.days = ["2026-05-18": ["gpt-5.5": [1, 2, 3]]]
+        CostUsageCacheIO.save(
+            provider: .codex,
+            cache: cache,
+            cacheRoot: root,
+            producerKey: "codex:cu:pc54070a94f6419ea")
 
         let loaded = CostUsageCacheIO.load(provider: .codex, cacheRoot: root)
 
